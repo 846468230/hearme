@@ -1,4 +1,4 @@
-package com.example.helloworld;
+package com.example.heartext;
 
 import android.os.Bundle;
 import io.flutter.app.FlutterActivity;

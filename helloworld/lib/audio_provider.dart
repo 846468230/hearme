@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart';
 
@@ -9,12 +8,10 @@ typedef void OnError(Exception exception);
 
 class AudioProvider {
   String url;
-
   AudioProvider(String url) {
     this.url = url;
   }
-
-  Future<Uint8List> _loadFileBytes(String url, {OnError onError}) async {
+  Future<Uint8List> _loadFileBytes(String url, {OnError}) async {
     Uint8List bytes;
     try {
       bytes = await readBytes(url);
@@ -26,12 +23,10 @@ class AudioProvider {
 
   Future<String> load() async {
     final bytes = await _loadFileBytes(url,
-        onError: (Exception exception) =>
+        OnError: (Exception exception) =>
             print('audio_provider.load => exception ${exception}'));
-
     final dir = await getApplicationDocumentsDirectory();
     final file = new File('${dir.path}/audio.mp3');
-
     await file.writeAsBytes(bytes);
     if (await file.exists()) {
       return file.path;

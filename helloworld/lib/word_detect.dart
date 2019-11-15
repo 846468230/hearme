@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -6,30 +7,29 @@ import 'dart:convert' as convert;
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:flutter_image_compress/flutter_image_compress.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
-class ThingsDetect extends StatefulWidget {
-  ThingsDetect({Key key}) : super(key: key);
-  _ThingsDetectState createState() => new _ThingsDetectState();
+class WordsDetect extends StatefulWidget {
+  WordsDetect({Key key}) : super(key: key);
+  _WordsDetectState createState() => new _WordsDetectState();
 }
 
-class _ThingsDetectState extends State<ThingsDetect> {
+class _WordsDetectState extends State<WordsDetect> {
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
     return Scaffold(
         appBar: AppBar(
           centerTitle: true,
-          title: new Text("通用物体识别"),
+          title: new Text("照片文字识别"),
         ),
         body: new Container(
           constraints: new BoxConstraints.expand(),
-          child: new PageDisplay(),
+          child: WordPageDisplay(),
           decoration: BoxDecoration(
             image: DecorationImage(
-              image: AssetImage("images/bg1.jpg"),
+              image: AssetImage("images/bg3.jpg"),
               fit: BoxFit.cover,
             ),
           ),
@@ -37,12 +37,12 @@ class _ThingsDetectState extends State<ThingsDetect> {
   }
 }
 
-class PageDisplay extends StatefulWidget {
-  PageDisplay({Key key}) : super(key: key);
-  _PageDisplay createState() => new _PageDisplay();
+class WordPageDisplay extends StatefulWidget {
+  WordPageDisplay({Key key}) : super(key: key);
+  _WordPageDisplay createState() => new _WordPageDisplay();
 }
 
-class _PageDisplay extends State<PageDisplay> {
+class _WordPageDisplay extends State<WordPageDisplay> {
   var _imgPath;
   var abPath;
   List<Result> results = [];
@@ -58,7 +58,7 @@ class _PageDisplay extends State<PageDisplay> {
     return new SingleChildScrollView(
       scrollDirection: Axis.vertical,
       child: new Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: <Widget>[
           Container(
               margin: EdgeInsets.all(20),
@@ -120,20 +120,24 @@ class _PageDisplay extends State<PageDisplay> {
   }
 
   Widget _resultView() {
+    if(_imgPath == null){
+      return new Text(
+        '还没有选择图片',
+        textScaleFactor: 1.0,
+      );
+    }
     if (results != []) {
       List<Widget> res = [];
       res.add(Text("当前的检测结果为:", textScaleFactor: 1.4));
-      List<Widget> names = [];
-
-      List<Widget> categorys = [];
+      List<Widget> words = [];
       for (var item in results) {
-        names.add(
+        words.add(
             Row(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
-          Text(item.keyword, textScaleFactor: 1.4),
-        ]));
-        categorys.add(
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
-          Text(item.root, textScaleFactor: 1.4),
+          Text(
+            item.word,
+            textScaleFactor: 1.4,
+            softWrap: true,
+          ),
         ]));
       }
 
@@ -143,7 +147,7 @@ class _PageDisplay extends State<PageDisplay> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
-              children: names,
+              children: words,
             ),
             decoration: new BoxDecoration(
               border:
@@ -161,42 +165,20 @@ class _PageDisplay extends State<PageDisplay> {
               ],
             )),
       );
-      res.add(Text("分类：", textScaleFactor: 1.4));
-      res.add(
-        Container(
-            margin: EdgeInsets.all(20),
-            child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: categorys),
-            decoration: new BoxDecoration(
-              border:
-                  new Border.all(color: Color(0xFFFF0000), width: 4), // 边色与边宽度
-              color: Colors.green[50], // 底色
-              //        borderRadius: new BorderRadius.circular((20.0)), // 圆角度
-              boxShadow: [
-                BoxShadow(
-                    color: Colors.grey,
-                    offset: Offset(5.0, 5.0),
-                    blurRadius: 10.0,
-                    spreadRadius: 2.0),
-                BoxShadow(color: Color(0x9900FF00), offset: Offset(1.0, 1.0)),
-                BoxShadow(color: Color(0xFF0000FF))
-              ],
-            )),
-      );
 
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: res,
-      );
+      return new SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: res,
+          ));
     }
   }
 
   Future<void> _baseTheFile(path) async {
     var imageString = await image2Base64(path);
-    postNet_2("http://47.100.166.11:9000/", imageString);
+    postNet_2("http://39.106.181.61:9000/word/", imageString);
     //print(imageString);
   }
 
@@ -214,7 +196,7 @@ class _PageDisplay extends State<PageDisplay> {
     List ress = convert.json.decode(jsondata);
     results = [];
     for (var item in ress) {
-      var rul = Result(item['keyword'], item['root']);
+      var rul = Result(item['words']);
       results.add(rul);
     }
   }
@@ -222,18 +204,16 @@ class _PageDisplay extends State<PageDisplay> {
   _detectThing() {
     _openGallery();
     isbase = true;
-    //print(abPath);
+    print(abPath);
   }
 
   _takePhoto() async {
     var image = await ImagePicker.pickImage(source: ImageSource.camera);
     try {
       abPath = image.path;
-      ByteData bytes = await rootBundle.load(abPath);
       isbase = true;
-      final result = await ImageGallerySaver.save(bytes.buffer.asUint8List());
     } catch (e) {
-      //print("didn't take a photo");
+      print("didn't take a photo");
     }
     setState(() {
       _imgPath = image;
@@ -254,8 +234,8 @@ class _PageDisplay extends State<PageDisplay> {
       file.absolute.path,
       quality: 85,
     );
-    //print(file.lengthSync());
-    //print(result.length);
+    print(file.lengthSync());
+    print(result.length);
     return result;
   }
 
@@ -264,7 +244,7 @@ class _PageDisplay extends State<PageDisplay> {
     try {
       abPath = image.path;
     } catch (e) {
-      //print("didn't pick a photo");
+      print("didn't pick a photo");
     }
     setState(() {
       _imgPath = image;
@@ -273,8 +253,14 @@ class _PageDisplay extends State<PageDisplay> {
 
   Widget _ImageView(imgPath) {
     if (imgPath == null) {
-      return Center(
-        child: Text("请选择图片或拍照"),
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: <Widget>[
+          Text("请选择图片或拍照", textScaleFactor: 1.2,),
+          Text("(读取照片数据时需要一定时间)", textScaleFactor: 1.0,),
+          Text("请耐心等待", textScaleFactor: 1.0,)
+        ],
       );
     } else {
       return Image.file(
@@ -285,7 +271,6 @@ class _PageDisplay extends State<PageDisplay> {
 }
 
 class Result {
-  String keyword;
-  String root;
-  Result(this.keyword, this.root);
+  String word;
+  Result(this.word);
 }
