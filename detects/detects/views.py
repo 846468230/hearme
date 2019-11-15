@@ -31,7 +31,8 @@ def get_token(option):
     if (result):
         return result['access_token']
     return None
-mp3name="result.mp3"
+number = 0;
+mp3name="%s.mp3"%(number)
 mp3namedir=os.path.join(BASE_DIR, mp3name)
 picture_detect=get_token(1)
 word_detect=get_token(2)    
@@ -96,10 +97,9 @@ def audio(request):
             res=audio_result
         return HttpResponse(res)
 
-def audioResult(request):
-    global mp3namedir
-    global mp3name
+def audioResult(request,mp3name):
     if request.method =="GET":
+        mp3namedir=os.path.join(BASE_DIR, mp3name)
         file = open(mp3namedir,"rb").read() 
         response = HttpResponse(content=file,content_type='audio/mpeg')
         response['Content-Disposition'] = 'attachment; filename=%s' % smart_str(mp3name)
@@ -115,8 +115,12 @@ class handle_picture:
     def detect(self,img,option,text=""):
         global picture_detect
         global word_detect
+        global number
         global mp3name
         global mp3namedir
+        number = number + 1
+        mp3name="%s.mp3"%(number)
+        mp3namedir=os.path.join(BASE_DIR, mp3name)
         if option==1:
             host = 'https://aip.baidubce.com/rest/2.0/image-classify/v2/advanced_general'
             access_token= picture_detect
@@ -151,5 +155,5 @@ class handle_picture:
             #print(req['words_result'])
             return json.dumps(req['words_result'],ensure_ascii=False)
         elif option==3:
-            return reverse('audioresult')
+            return reverse('audioresult',args=[mp3name])
 handle=handle_picture()

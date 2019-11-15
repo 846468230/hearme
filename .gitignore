@@ -1,1 +1,4 @@
 /helloworld/build
+*.mp3
+
+*.DS_Store

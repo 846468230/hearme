@@ -21,5 +21,5 @@ urlpatterns = [
     path('',index),
     path('word/',word),
     path('audio/',audio),
-    path('audio/result/',audioResult,name="audioresult")
+    path('audio/result/<str:mp3name>/',audioResult,name="audioresult")
 ]
