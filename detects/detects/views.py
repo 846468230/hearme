@@ -13,6 +13,7 @@ from .settings import BASE_DIR
 from django.utils.encoding import smart_str
 import os
 from django.urls import reverse
+import uuid
 def get_token(option):
     gcontext = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
     # client_id 为官网获取的AK， client_secret 为官网获取的SK  option=1 通用图片识别 2 通用文字识别
@@ -84,17 +85,12 @@ def audio(request):
     global handle
     if request.method =="POST":
         img = request.POST.get("img")
-        if audio_picture_data!=img:
-            res = handle.detect(img,2)
-            res = json.loads(res)
-            text=""
-            for item in res:
-                text=text+item['words']
-            res=handle.detect("img",3,text)
-            audio_picture_data=img
-            audio_result=res
-        else:
-            res=audio_result
+        res = handle.detect(img,2)
+        res = json.loads(res)
+        text=""
+        for item in res:
+            text=text+item['words']
+        res=handle.detect("img",3,text)
         return HttpResponse(res)
 
 def audioResult(request,mp3name):
@@ -116,9 +112,7 @@ class handle_picture:
         global picture_detect
         global word_detect
         global number
-        global mp3name
-        global mp3namedir
-        number = number + 1
+        number = str(uuid.uuid4())
         mp3name="%s.mp3"%(number)
         mp3namedir=os.path.join(BASE_DIR, mp3name)
         if option==1:
